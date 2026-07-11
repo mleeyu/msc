@@ -9,4 +9,29 @@ NULL
 #' @export
 hello_world <- function() .Call(wrap__hello_world)
 
+#' GARCH(p = 1, q = 1) model.
+#' @export
+#' @section Methods:
+#'\subsection{Method `new`}{
+#'Create GARCH(1,1) model with specified error distribution.
+#'}
+#'
+#'\subsection{Method `simulate`}{
+#'Simulate returns and sigmas from GARCH(p = 1, q = 1) model.
+#'}
+#'
+GARCH <- new.env(parent = emptyenv())
+
+GARCH$new <- function(distribution) .Call(wrap__GARCH__new, distribution)
+
+GARCH$simulate <- function(params, n) .Call(wrap__GARCH__simulate, self, params, n)
+
+#' @rdname GARCH
+#' @usage NULL
+#' @export
+`$.GARCH` <- function (self, name) { func <- GARCH[[name]]; environment(func) <- environment(); func }
+
+#' @export
+`[[.GARCH` <- `$.GARCH`
+
 # nolint end
