@@ -1,6 +1,18 @@
-{ pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-26.05") {}, ...}:
+# { pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-26.05") {}, ...}:
 
 let
+  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-26.05") {
+    overlays = [
+      (final: prev: {
+        R = prev.R.overrideAttrs (old: {
+          configureFlags =
+            (old.configureFlags or [])
+            ++ [ "--enable-memory-profiling" ];
+        });
+      })
+    ];
+  };
+
   rextendr_0_5_0 = pkgs.rPackages.buildRPackage rec {
     name = "rextendr-${version}";
     pname = "rextendr";
