@@ -6,7 +6,7 @@
 \alias{$.GARCH}
 \title{GARCH(p = 1, q = 1) model.}
 \format{
-An object of class \code{environment} of length 3.
+An object of class \code{environment} of length 4.
 }
 \usage{
 GARCH
@@ -22,6 +22,10 @@ Create GARCH(1,1) model with specified error distribution.
 
 \subsection{Method \code{simulate}}{
 Simulate returns and sigmas from GARCH(p = 1, q = 1) model.
+}
+
+\subsection{Method \code{forecast}}{
+Forecast sigmas from GARCH(p = 1, q = 1) model.
 }
 }
 

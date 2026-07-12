@@ -1,4 +1,5 @@
 use extendr_api::prelude::*;
+use statrs::distribution::{Normal, StudentsT, Continuous};
 
 /// Return string `"Hello world!"` to R.
 /// @export
@@ -12,7 +13,7 @@ fn hello_world() -> &'static str {
 
 enum Distribution {
     Normal,
-    StudentT,
+    StudentsT,
 }
 
 #[extendr]
@@ -35,7 +36,7 @@ impl GARCH {
         Self {
             distribution: match distribution {
                 "Normal" => Distribution::Normal,
-                "StudentT" => Distribution::StudentT,
+                "StudentsT" => Distribution::StudentsT,
                 _ => panic!("Unknown distribution: {}", distribution),
             },
         }
@@ -53,7 +54,7 @@ impl GARCH {
                     .as_real_vector()
                     .unwrap()
             }
-            Distribution::StudentT => {
+            Distribution::StudentsT => {
                 let nu: f64 = params[3];
                 let inv_sd: f64 = 1.0_f64 / (nu / (nu - 2.0_f64)).sqrt();
                 call!("rt", n, nu)
@@ -93,6 +94,35 @@ impl GARCH {
         }
 
         sigmas
+    }
+
+    fn log_likelihood(&self, params: &[f64], returns: &[f64]) -> f64 {
+        let sigmas: Vec<f64> = self.forecast(params, returns);
+
+        match &self.distribution {
+            Distribution::Normal => {
+                let normal = Normal::new(0.0_f64, 1.0_f64).unwrap();
+                returns
+                    .iter()
+                    .zip(sigmas.iter())
+                    .map(|(&r, &s)| {
+                        normal.ln_pdf(r / s) - s.ln()
+                    })
+                    .sum()
+            }
+            Distribution::StudentsT => {
+                let nu: f64 = params[3];
+                let inv_sd: f64 = 1.0_f64 / (nu / (nu - 2.0_f64)).sqrt();
+                let studentst = StudentsT::new(0.0_f64, 1.0_f64, nu).unwrap();
+                returns
+                    .iter()
+                    .zip(sigmas.iter())
+                    .map(|(&r, &s)| {
+                        studentst.ln_pdf(r / (s * inv_sd)) - (s * inv_sd).ln()
+                    })
+                    .sum()
+            }
+        }
     }
 }
 
