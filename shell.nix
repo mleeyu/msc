@@ -43,6 +43,7 @@ let
 in pkgs.mkShell {
   buildInputs = with pkgs; [
     cmake
+    nlopt
     # cargo
     # rustc
 

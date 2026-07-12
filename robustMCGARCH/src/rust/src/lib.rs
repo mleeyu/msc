@@ -1,5 +1,8 @@
+#![allow(non_snake_case)]
+
 use extendr_api::prelude::*;
 use statrs::distribution::{Normal, StudentsT, Continuous};
+use nlopt::{Algorithm, Nlopt, Target};
 
 /// Return string `"Hello world!"` to R.
 /// @export
@@ -96,6 +99,7 @@ impl GARCH {
         sigmas
     }
 
+    /// Log-likelihood function of GARCH(p = 1, q = 1) model.
     fn log_likelihood(&self, params: &[f64], returns: &[f64]) -> f64 {
         let sigmas: Vec<f64> = self.forecast(params, returns);
 
@@ -122,6 +126,57 @@ impl GARCH {
                     })
                     .sum()
             }
+        }
+    }
+
+    // Estimate parameters of GARCH(p = 1, q = 1) model.
+    fn estimate(&self, params: &[f64], returns: &[f64]) -> Vec<f64> {
+        let n = params.len();
+
+        let mut opt = Nlopt::new(
+            Algorithm::Lbfgs,
+            n,
+            |x: &[f64], grad: Option<&mut [f64]>, data: &mut &[f64]| -> f64 {
+                if let Some(grad) = grad {
+                    nlopt::approximate_gradient(
+                        x,
+                        |x: &[f64]| self.log_likelihood(x, data),
+                        grad,
+                    );
+                }
+
+                let violation: f64 = x[1] + x[2] - 1.0;
+                if violation >= 0.0_f64 {
+                    self.log_likelihood(x, data) - 1e6_f64 * violation.powi(2)
+                } else {
+                    self.log_likelihood(x, data)
+                }
+            },
+            Target::Maximize,
+            returns,
+        );
+
+        let (lower_bounds, upper_bounds) = match &self.distribution {
+            Distribution::Normal => (
+                vec![f64::EPSILON, 0.0_f64, 0.0_f64],
+                vec![f64::INFINITY, 1.0_f64, 1.0_f64],
+            ),
+            Distribution::StudentsT => (
+                vec![f64::EPSILON, 0.0_f64, 0.0_f64, 2.0_f64 + f64::EPSILON.sqrt()],
+                vec![f64::INFINITY, 1.0_f64, 1.0_f64, 100.0_f64],
+            ),
+        };
+        opt.set_lower_bounds(&lower_bounds).unwrap();
+        opt.set_upper_bounds(&upper_bounds).unwrap();
+
+        opt.set_xtol_rel(0.0_f64).unwrap();
+        opt.set_ftol_rel(2.2e-9).unwrap();
+        opt.set_maxeval(1000).unwrap();
+
+        let mut solution = params.to_vec();
+        match opt.optimize(&mut solution) {
+            Ok(_) => solution,
+            Err(_) => params.to_vec(),
         }
     }
 }
