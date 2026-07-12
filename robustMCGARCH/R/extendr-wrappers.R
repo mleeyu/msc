@@ -26,6 +26,8 @@ GARCH$new <- function(distribution) .Call(wrap__GARCH__new, distribution)
 
 GARCH$simulate <- function(params, n) .Call(wrap__GARCH__simulate, self, params, n)
 
+GARCH$forecast <- function(params, returns) .Call(wrap__GARCH__forecast, self, params, returns)
+
 #' @rdname GARCH
 #' @usage NULL
 #' @export

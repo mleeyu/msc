@@ -43,8 +43,8 @@ let
 in pkgs.mkShell {
   buildInputs = with pkgs; [
     cmake
-    cargo
-    rustc
+    # cargo
+    # rustc
 
     (rWrapper.override {
       packages = with rPackages; [

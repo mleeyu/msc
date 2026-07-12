@@ -61,7 +61,7 @@ impl GARCH {
                     .as_real_vector()
                     .unwrap()
                     .into_iter()
-                    .map(|x| x * inv_sd)
+                    .map(|x: f64| x * inv_sd)
                     .collect::<Vec<f64>>()
             }
         };
@@ -76,6 +76,23 @@ impl GARCH {
         }
 
         SimulateData { returns, sigmas }
+    }
+
+    /// Forecast sigmas from GARCH(p = 1, q = 1) model.
+    fn forecast(&self, params: &[f64], returns: &[f64]) -> Vec<f64> {
+        let [omega, alpha, beta]: [f64; 3] = [params[0], params[1], params[2]];
+        let n: usize = returns.len();
+        let mut sigmas: Vec<f64> = vec![0.0_f64; n];
+
+        sigmas[0] = (omega / (1.0_f64 - alpha - beta)).sqrt();
+        for i in 1..n {
+            sigmas[i] = (omega
+                         + alpha * returns[i - 1].powi(2)
+                         + beta * sigmas[i - 1].powi(2)
+                        ).sqrt();
+        }
+
+        sigmas
     }
 }
 

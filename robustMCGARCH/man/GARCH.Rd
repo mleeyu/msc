@@ -6,7 +6,7 @@
 \alias{$.GARCH}
 \title{GARCH(p = 1, q = 1) model.}
 \format{
-An object of class \code{environment} of length 2.
+An object of class \code{environment} of length 3.
 }
 \usage{
 GARCH
