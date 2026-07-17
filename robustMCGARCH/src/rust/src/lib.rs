@@ -129,8 +129,8 @@ impl GARCH {
         }
     }
 
-    // Estimate parameters of GARCH(p = 1, q = 1) model.
-    fn estimate(&self, params: &[f64], returns: &[f64]) -> Vec<f64> {
+    // Fit GARCH(p = 1, q = 1) model.
+    fn fit(&self, params: &[f64], returns: &[f64]) -> Vec<f64> {
         let n = params.len();
 
         let mut opt = Nlopt::new(

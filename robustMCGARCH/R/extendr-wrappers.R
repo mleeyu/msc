@@ -38,7 +38,7 @@ GARCH$forecast <- function(params, returns) .Call(wrap__GARCH__forecast, self, p
 
 GARCH$log_likelihood <- function(params, returns) .Call(wrap__GARCH__log_likelihood, self, params, returns)
 
-GARCH$estimate <- function(params, returns) .Call(wrap__GARCH__estimate, self, params, returns)
+GARCH$fit <- function(params, returns) .Call(wrap__GARCH__fit, self, params, returns)
 
 #' @rdname GARCH
 #' @usage NULL
