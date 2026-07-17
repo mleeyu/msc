@@ -24,12 +24,6 @@ struct GARCH {
     distribution: Distribution,
 }
 
-#[derive(IntoList)]
-struct SimulateData {
-    returns: Vec<f64>,
-    sigmas: Vec<f64>,
-}
-
 /// GARCH(p = 1, q = 1) model.
 /// @export
 #[extendr]
@@ -46,7 +40,7 @@ impl GARCH {
     }
 
     /// Simulate returns and sigmas from GARCH(p = 1, q = 1) model.
-    fn simulate(&self, params: &[f64], n: usize) -> SimulateData {
+    fn simulate(&self, params: &[f64], n: usize) -> List {
         let [omega, alpha, beta]: [f64; 3] = [params[0], params[1], params[2]];
         let mut returns: Vec<f64> = vec![0.0_f64; n];
         let mut sigmas: Vec<f64> = vec![0.0_f64; n];
@@ -79,7 +73,7 @@ impl GARCH {
             returns[i] = sigmas[i] * errors[i];
         }
 
-        SimulateData { returns, sigmas }
+        list!(returns = returns, sigmas = sigmas)
     }
 
     /// Forecast sigmas from GARCH(p = 1, q = 1) model.
