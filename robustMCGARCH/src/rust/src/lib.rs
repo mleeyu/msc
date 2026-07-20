@@ -157,13 +157,13 @@ impl GARCH {
             ),
             Distribution::StudentsT => (
                 vec![f64::EPSILON, 0.0_f64, 0.0_f64, 2.0_f64 + f64::EPSILON.sqrt()],
-                vec![f64::INFINITY, 1.0_f64, 1.0_f64, 100.0_f64],
+                vec![f64::INFINITY, 1.0_f64 - f64::EPSILON.sqrt(), 1.0_f64 - f64::EPSILON.sqrt(), 100.0_f64],
             ),
         };
         opt.set_lower_bounds(&lower_bounds).unwrap();
         opt.set_upper_bounds(&upper_bounds).unwrap();
 
-        opt.set_xtol_rel(0.0_f64).unwrap();
+        opt.set_xtol_rel(2.2e-7).unwrap();
         opt.set_ftol_rel(2.2e-9).unwrap();
         opt.set_maxeval(1000).unwrap();
 
