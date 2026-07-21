@@ -20,8 +20,12 @@ hello_world <- function() .Call(wrap__hello_world)
 #'Simulate returns and sigmas from GARCH(p = 1, q = 1) model.
 #'}
 #'
+#'\subsection{Method `sigmas`}{
+#'Calculate sigmas from GARCH(p = 1, q = 1) model.
+#'}
+#'
 #'\subsection{Method `forecast`}{
-#'Forecast sigmas from GARCH(p = 1, q = 1) model.
+#'Forecast one-step-ahead sigma from GARCH(p = 1, q = 1) model.
 #'}
 #'
 #'\subsection{Method `log_likelihood`}{
@@ -33,6 +37,8 @@ GARCH <- new.env(parent = emptyenv())
 GARCH$new <- function(distribution) .Call(wrap__GARCH__new, distribution)
 
 GARCH$simulate <- function(params, n) .Call(wrap__GARCH__simulate, self, params, n)
+
+GARCH$sigmas <- function(params, returns) .Call(wrap__GARCH__sigmas, self, params, returns)
 
 GARCH$forecast <- function(params, returns) .Call(wrap__GARCH__forecast, self, params, returns)
 

@@ -76,8 +76,8 @@ impl GARCH {
         list!(returns = returns, sigmas = sigmas)
     }
 
-    /// Forecast sigmas from GARCH(p = 1, q = 1) model.
-    fn forecast(&self, params: &[f64], returns: &[f64]) -> Vec<f64> {
+    /// Calculate sigmas of GARCH(p = 1, q = 1) model.
+    fn sigmas(&self, params: &[f64], returns: &[f64]) -> Vec<f64> {
         let [omega, alpha, beta]: [f64; 3] = [params[0], params[1], params[2]];
         let n: usize = returns.len();
         let mut sigmas: Vec<f64> = vec![0.0_f64; n];
@@ -93,9 +93,25 @@ impl GARCH {
         sigmas
     }
 
+    /// Forecast one-step-ahead sigma of GARCH(p = 1, q = 1) model.
+    fn forecast(&self, params: &[f64], returns: &[f64]) -> f64 {
+        let [omega, alpha, beta]: [f64; 3] = [params[0], params[1], params[2]];
+        let n: usize = returns.len();
+        let mut sigma: f64 = (omega / (1.0_f64 - alpha - beta)).sqrt();
+
+        for i in 1..(n + 1) {
+            sigma = (omega
+                     + alpha * returns[i - 1].powi(2)
+                     + beta * sigma.powi(2)
+                    ).sqrt();
+        }
+
+        sigma
+    }
+
     /// Log-likelihood function of GARCH(p = 1, q = 1) model.
     fn log_likelihood(&self, params: &[f64], returns: &[f64]) -> f64 {
-        let sigmas: Vec<f64> = self.forecast(params, returns);
+        let sigmas: Vec<f64> = self.sigmas(params, returns);
 
         match &self.distribution {
             Distribution::Normal => {
@@ -123,7 +139,7 @@ impl GARCH {
         }
     }
 
-    // Fit GARCH(p = 1, q = 1) model.
+    // Fit returns with GARCH(p = 1, q = 1) model.
     fn fit(&self, params: &[f64], returns: &[f64]) -> Vec<f64> {
         let n = params.len();
 
@@ -152,18 +168,32 @@ impl GARCH {
 
         let (lower_bounds, upper_bounds) = match &self.distribution {
             Distribution::Normal => (
-                vec![f64::EPSILON, 0.0_f64, 0.0_f64],
-                vec![f64::INFINITY, 1.0_f64, 1.0_f64],
+                vec![f64::EPSILON.sqrt(),
+                     0.0_f64,
+                     0.0_f64
+                ],
+                vec![f64::INFINITY,
+                     1.0_f64 - f64::EPSILON.sqrt(),
+                     1.0_f64 - f64::EPSILON.sqrt()
+                ],
             ),
             Distribution::StudentsT => (
-                vec![f64::EPSILON, 0.0_f64, 0.0_f64, 2.0_f64 + f64::EPSILON.sqrt()],
-                vec![f64::INFINITY, 1.0_f64 - f64::EPSILON.sqrt(), 1.0_f64 - f64::EPSILON.sqrt(), 100.0_f64],
+                vec![f64::EPSILON.sqrt(),
+                     0.0_f64,
+                     0.0_f64,
+                     2.0_f64 + f64::EPSILON.sqrt()
+                ],
+                vec![f64::INFINITY,
+                     1.0_f64 - f64::EPSILON.sqrt(),
+                     1.0_f64 - f64::EPSILON.sqrt(),
+                     100.0_f64
+                ],
             ),
         };
         opt.set_lower_bounds(&lower_bounds).unwrap();
         opt.set_upper_bounds(&upper_bounds).unwrap();
 
-        opt.set_xtol_rel(2.2e-7).unwrap();
+        opt.set_xtol_rel(1.1e-7).unwrap();
         opt.set_ftol_rel(2.2e-9).unwrap();
         opt.set_maxeval(1000).unwrap();
 
