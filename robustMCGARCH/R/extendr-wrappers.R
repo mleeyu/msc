@@ -21,11 +21,11 @@ hello_world <- function() .Call(wrap__hello_world)
 #'}
 #'
 #'\subsection{Method `sigmas`}{
-#'Calculate sigmas from GARCH(p = 1, q = 1) model.
+#'Calculate sigmas of GARCH(p = 1, q = 1) model.
 #'}
 #'
 #'\subsection{Method `forecast`}{
-#'Forecast one-step-ahead sigma from GARCH(p = 1, q = 1) model.
+#'Forecast one-step-ahead sigma of GARCH(p = 1, q = 1) model.
 #'}
 #'
 #'\subsection{Method `log_likelihood`}{

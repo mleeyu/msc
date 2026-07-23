@@ -193,7 +193,7 @@ impl GARCH {
         opt.set_lower_bounds(&lower_bounds).unwrap();
         opt.set_upper_bounds(&upper_bounds).unwrap();
 
-        opt.set_xtol_rel(1.1e-7).unwrap();
+        opt.set_xtol_rel(2.2e-9).unwrap();
         opt.set_ftol_rel(2.2e-9).unwrap();
         opt.set_maxeval(1000).unwrap();
 
