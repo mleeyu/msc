@@ -37,6 +37,28 @@
         withr
       ];
     };
+
+    robustMCGARCH = pkgs.rPackages.buildRPackage {
+      name = "robustMCGARCH";
+      version = "0.0.0.9000";
+      src = ./robustMCGARCH;
+      postPatch = ''
+        patchShebangs .
+      '';
+      nativeBuildInputs = with pkgs; [
+        R
+
+        cargo
+        rustc
+        pkg-config
+
+        cmake
+        nlopt
+      ];
+      propagatedBuildInputs = with pkgs.rPackages; [
+        rextendr_0_5_0
+      ];
+    };
   in {
     devShells.${system}.default = pkgs.mkShell {
       packages = with pkgs; [
@@ -53,6 +75,8 @@
             devtools
             usethis
           ] ++ [
+            arrow
+            xts
             rextendr_0_5_0
           ];
         })
@@ -61,5 +85,8 @@
       env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
     };
 
+    # To use result symlink, update .libPaths in R:
+    # .libPaths(c(.libPaths(), normalizePath("result/library")))
+    packages.${system}.default = robustMCGARCH;
   };
 }
