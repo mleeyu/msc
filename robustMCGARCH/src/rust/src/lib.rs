@@ -111,30 +111,36 @@ impl GARCH {
 
     /// Log-likelihood function of GARCH(p = 1, q = 1) model.
     fn log_likelihood(&self, params: &[f64], returns: &[f64]) -> f64 {
-        let sigmas: Vec<f64> = self.sigmas(params, returns);
+        let [omega, alpha, beta]: [f64; 3] = [params[0], params[1], params[2]];
+        let n: usize = returns.len();
+        let mut sigma: f64 = (omega / (1.0_f64 - alpha - beta)).sqrt();
 
         match &self.distribution {
             Distribution::Normal => {
                 let normal = Normal::new(0.0_f64, 1.0_f64).unwrap();
-                returns
-                    .iter()
-                    .zip(sigmas.iter())
-                    .map(|(&r, &s)| {
-                        normal.ln_pdf(r / s) - s.ln()
-                    })
-                    .sum()
+                let mut log_likelihood: f64 = normal.ln_pdf(returns[0] / sigma) - sigma.ln();
+                for i in 1..n {
+                    sigma = (omega
+                             + alpha * returns[i - 1].powi(2)
+                             + beta * sigma.powi(2)
+                            ).sqrt();
+                    log_likelihood += normal.ln_pdf(returns[i] / sigma) - sigma.ln();
+                }
+                log_likelihood
             }
             Distribution::StudentsT => {
                 let nu: f64 = params[3];
                 let inv_sd: f64 = 1.0_f64 / (nu / (nu - 2.0_f64)).sqrt();
                 let studentst = StudentsT::new(0.0_f64, 1.0_f64, nu).unwrap();
-                returns
-                    .iter()
-                    .zip(sigmas.iter())
-                    .map(|(&r, &s)| {
-                        studentst.ln_pdf(r / (s * inv_sd)) - (s * inv_sd).ln()
-                    })
-                    .sum()
+                let mut log_likelihood: f64 = studentst.ln_pdf(returns[0] / (sigma * inv_sd)) - (sigma * inv_sd).ln();
+                for i in 1..n {
+                    sigma = (omega
+                             + alpha * returns[i - 1].powi(2)
+                             + beta * sigma.powi(2)
+                            ).sqrt();
+                    log_likelihood += studentst.ln_pdf(returns[i] / (sigma * inv_sd)) - (sigma * inv_sd).ln();
+                }
+                log_likelihood
             }
         }
     }
