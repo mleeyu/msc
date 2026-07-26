@@ -2,6 +2,7 @@
 
 use extendr_api::prelude::*;
 use statrs::distribution::{Normal, StudentsT, Continuous};
+use statrs::function::gamma::ln_gamma;
 use nlopt::{Algorithm, Nlopt, Target};
 
 /// Return string `"Hello world!"` to R.
@@ -41,7 +42,8 @@ impl GARCH {
 
     /// Simulate returns and sigmas from GARCH(p = 1, q = 1) model.
     fn simulate(&self, params: &[f64], n: usize) -> List {
-        let [omega, alpha, beta]: [f64; 3] = [params[0], params[1], params[2]];
+        let (omega, alpha, beta): (f64, f64, f64) =
+            (params[0], params[1], params[2]);
         let mut returns: Vec<f64> = vec![0.0_f64; n];
         let mut sigmas: Vec<f64> = vec![0.0_f64; n];
         let errors: Vec<f64> = match &self.distribution {
@@ -78,7 +80,8 @@ impl GARCH {
 
     /// Calculate sigmas of GARCH(p = 1, q = 1) model.
     fn sigmas(&self, params: &[f64], returns: &[f64]) -> Vec<f64> {
-        let [omega, alpha, beta]: [f64; 3] = [params[0], params[1], params[2]];
+        let (omega, alpha, beta): (f64, f64, f64) =
+            (params[0], params[1], params[2]);
         let n: usize = returns.len();
         let mut sigmas: Vec<f64> = vec![0.0_f64; n];
 
@@ -95,7 +98,8 @@ impl GARCH {
 
     /// Forecast one-step-ahead sigma of GARCH(p = 1, q = 1) model.
     fn forecast(&self, params: &[f64], returns: &[f64]) -> f64 {
-        let [omega, alpha, beta]: [f64; 3] = [params[0], params[1], params[2]];
+        let (omega, alpha, beta): (f64, f64, f64) =
+            (params[0], params[1], params[2]);
         let n: usize = returns.len();
         let mut sigma: f64 = (omega / (1.0_f64 - alpha - beta)).sqrt();
 
@@ -111,8 +115,8 @@ impl GARCH {
 
     /// Log-likelihood function of GARCH(p = 1, q = 1) model.
     fn log_likelihood(&self, params: &[f64], returns: &[f64]) -> f64 {
-        let [omega, alpha, beta]: [f64; 3] = [params[0], params[1], params[2]];
-        let n: usize = returns.len();
+        let (omega, alpha, beta): (f64, f64, f64) =
+            (params[0], params[1], params[2]);
         let mut sigma: f64 = (omega / (1.0_f64 - alpha - beta)).sqrt();
 
         match &self.distribution {
@@ -120,13 +124,13 @@ impl GARCH {
                 let normal = Normal::new(0.0_f64, 1.0_f64).unwrap();
                 let mut log_likelihood: f64 =
                     normal.ln_pdf(returns[0] / sigma) - sigma.ln();
-                for i in 1..n {
+                for w in returns.windows(2) {
                     sigma = (omega
-                             + alpha * returns[i - 1].powi(2)
+                             + alpha * w[0].powi(2)
                              + beta * sigma.powi(2)
                             ).sqrt();
                     log_likelihood +=
-                        normal.ln_pdf(returns[i] / sigma) - sigma.ln();
+                        normal.ln_pdf(w[1] / sigma) - sigma.ln();
                 }
                 log_likelihood
             }
@@ -137,16 +141,65 @@ impl GARCH {
                 let mut log_likelihood: f64 =
                     studentst.ln_pdf(returns[0] / (sigma * inv_sd))
                     - (sigma * inv_sd).ln();
-                for i in 1..n {
+                for w in returns.windows(2) {
                     sigma = (omega
-                             + alpha * returns[i - 1].powi(2)
+                             + alpha * w[0].powi(2)
                              + beta * sigma.powi(2)
                             ).sqrt();
                     log_likelihood +=
-                        studentst.ln_pdf(returns[i] / (sigma * inv_sd))
+                        studentst.ln_pdf(w[1] / (sigma * inv_sd))
                         - (sigma * inv_sd).ln();
                 }
                 log_likelihood
+            }
+        }
+    }
+
+    /// Objective function of GARCH(p = 1, q = 1) model.
+    fn objective(&self, params: &[f64], returns: &[f64]) -> f64 {
+        let (omega, alpha, beta): (f64, f64, f64) =
+            (params[0], params[1], params[2]);
+        if alpha + beta >= 1.0_f64 {
+            return f64::NEG_INFINITY;
+        }
+        let mut sigma2: f64 = omega / (1.0_f64 - alpha - beta);
+
+        match &self.distribution {
+            Distribution::Normal => {
+                let mut objective: f64 =
+                    - returns[0] * returns[0] / sigma2 - sigma2.ln();
+                for w in returns.windows(2) {
+                    sigma2 = omega
+                            + alpha * w[0] * w[0]
+                            + beta * sigma2;
+                    objective +=
+                        - w[1] * w[1] / sigma2 - sigma2.ln();
+                }
+                objective
+            }
+            Distribution::StudentsT => {
+                let nu: f64 = params[3];
+                let nu_plus_1: f64 = nu + 1.0_f64;
+                let inv_sd2: f64 = 1.0_f64 / (nu / (nu - 2.0_f64));
+                let mut objective: f64 =
+                    2.0_f64 * (ln_gamma(nu_plus_1 / 2.0_f64)
+                               - ln_gamma(nu / 2.0_f64)) - nu.ln()
+                    - nu_plus_1 * (1.0_f64 + returns[0] * returns[0]
+                                             / (sigma2 * nu)).ln()
+                    - sigma2.ln();
+                for w in returns.windows(2) {
+                    sigma2 = omega
+                            + alpha * w[0] * w[0]
+                            + beta * sigma2;
+                    sigma2 *= inv_sd2;
+                    objective +=
+                        2.0_f64 * (ln_gamma(nu_plus_1 / 2.0_f64)
+                                   - ln_gamma(nu / 2.0_f64)) - nu.ln()
+                        - nu_plus_1 * (1.0_f64 + w[1] * w[1]
+                                                 / (sigma2 * nu)).ln()
+                        - sigma2.ln();
+                }
+                objective
             }
         }
     }
@@ -162,17 +215,12 @@ impl GARCH {
                 if let Some(grad) = grad {
                     nlopt::approximate_gradient(
                         x,
-                        |x: &[f64]| self.log_likelihood(x, data),
+                        |x: &[f64]| self.objective(x, data),
                         grad,
                     );
                 }
 
-                let violation: f64 = x[1] + x[2] - 1.0;
-                if violation >= 0.0_f64 {
-                    self.log_likelihood(x, data) - 1e6_f64 * violation.powi(2)
-                } else {
-                    self.log_likelihood(x, data)
-                }
+                self.objective(x, data)
             },
             Target::Maximize,
             returns,

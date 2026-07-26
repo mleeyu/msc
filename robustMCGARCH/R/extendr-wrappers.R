@@ -32,6 +32,10 @@ hello_world <- function() .Call(wrap__hello_world)
 #'Log-likelihood function of GARCH(p = 1, q = 1) model.
 #'}
 #'
+#'\subsection{Method `objective`}{
+#'Objective function of GARCH(p = 1, q = 1) model.
+#'}
+#'
 GARCH <- new.env(parent = emptyenv())
 
 GARCH$new <- function(distribution) .Call(wrap__GARCH__new, distribution)
@@ -43,6 +47,8 @@ GARCH$sigmas <- function(params, returns) .Call(wrap__GARCH__sigmas, self, param
 GARCH$forecast <- function(params, returns) .Call(wrap__GARCH__forecast, self, params, returns)
 
 GARCH$log_likelihood <- function(params, returns) .Call(wrap__GARCH__log_likelihood, self, params, returns)
+
+GARCH$objective <- function(params, returns) .Call(wrap__GARCH__objective, self, params, returns)
 
 GARCH$fit <- function(params, returns) .Call(wrap__GARCH__fit, self, params, returns)
 
