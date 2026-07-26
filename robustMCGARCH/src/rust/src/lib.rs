@@ -170,8 +170,8 @@ impl GARCH {
                     - returns[0] * returns[0] / sigma2 - sigma2.ln();
                 for w in returns.windows(2) {
                     sigma2 = omega
-                            + alpha * w[0] * w[0]
-                            + beta * sigma2;
+                             + alpha * w[0] * w[0]
+                             + beta * sigma2;
                     objective +=
                         - w[1] * w[1] / sigma2 - sigma2.ln();
                 }
@@ -189,8 +189,8 @@ impl GARCH {
                     - sigma2.ln();
                 for w in returns.windows(2) {
                     sigma2 = omega
-                            + alpha * w[0] * w[0]
-                            + beta * sigma2;
+                             + alpha * w[0] * w[0]
+                             + beta * sigma2;
                     sigma2 *= inv_sd2;
                     objective +=
                         2.0_f64 * (ln_gamma(nu_plus_1 / 2.0_f64)
