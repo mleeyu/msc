@@ -1,0 +1,83 @@
+\documentclass{article}
+\usepackage[a4paper]{geometry}
+\usepackage[doublespacing]{setspace}
+
+\usepackage[authoryear]{natbib}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{bm}
+
+% table
+% plots
+
+\usepackage[brazilian]{babel}
+\title{}
+\author{}
+\date{}
+
+\begin{document}
+
+
+
+
+\begin{titlepage}
+    \centering
+
+    \textsc{Universidade Estadual de Campinas}\\
+    \textsc{Instituto de Matemática, Estatística e Computação Científica}
+
+    \vfill
+
+    \textbf{FAPESP - Relatório Científico Parcial}
+
+    \vspace{4em}
+
+    \textbf{\Large Previsão de Medidas de Risco Intradiárias em Séries Temporais Univariadas}
+
+    \vspace{4em}
+
+    \begin{tabular}{ll}
+        \textbf{Processo:} & 2026/00684-7\\
+        \textbf{Período de Vigência:}  & 01 de Março de 2026 - 29 de Fevereiro de 2028\\
+        \textbf{Período do Relatório:} & 01 de Março de 2026 - 30 de Agosto de 2026\\
+        \textbf{Bolsista:} & Mateus Lee Yu\\
+        \textbf{Orientador:} & Carlos César Trucíos Maza
+    \end{tabular}
+
+    \vfill
+
+    Campinas, 2026
+\end{titlepage}
+\newpage
+
+
+
+
+\section{Resumo do Projeto}
+A crescente disponibilidade de dados de alta frequência nos mercados financeiros tem despertado o interesse de acadêmicos e profissionais do setor na modelagem e previsão de medidas de risco intradiárias, que, ademais da sua importância \textit{per se}, é também fundamentais para a definição de ordens no \textit{order book}, o desenvolvimento de estratégias de negociação algorítmica, tomada de decisão em \textit{hedge} e formulação de modelos de precificação \citep{Engle_Sokalska_2012, Stroud_Johannes_2014, Rossi_Fantazzini_2015}. Modelos de volatilidade comumente utilizados para estimar medidas de risco diárias apresentam desempenho insatisfatório quando aplicados a dados intradiários. Isto, devido a não considerarem o componente de periodicidade da volatilidade intradiária e outros fatos estilizados intradiários. Com o objetivo de contornar essas limitações, o modelo GARCH com componentes multiplicativos proposto por \cite{Engle_Sokalska_2012} surgiu como uma alternativa promissora. No entanto, seu desempenho tem se mostrado insatisfatório em contextos marcados por alta volatilidade, presença de \textit{outliers} e mudanças de regime -- características comuns nas séries temporais financeiras. Este projeto, visa desenvolver um modelo de volatilidade intradiário univariado capaz de lidar com as características do mercado mencionadas anteriormente, preenchendo assim uma lacuna na literatura. Espera--se que o desenvolvimento desta dissertação resulte na publicação de um artigo científico e, idealmente, na conquista de uma premiação na categoria \textit{Best Student Paper} em um congresso científico internacional. As metodologias desenvolvidas serão implementadas e disponibilizadas em repositórios públicos no GitHub, bem como em um pacote para a linguagem R a ser submetido ao CRAN, permitindo que usuários finais se beneficiem diretamente dos avanços gerados por esta pesquisa.
+
+
+
+
+\section{Realizações no Período}
+
+
+
+
+
+\section{Plano de Gestão de Dados}
+
+
+
+
+\section{Plano de Atividades para o Próximo Período}
+
+
+
+
+\bibliographystyle{apalike}
+\bibliography{bibliography}
+
+\end{document}
