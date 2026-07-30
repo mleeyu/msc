@@ -1,8 +1,9 @@
 #![allow(non_snake_case)]
 
 use extendr_api::prelude::*;
-use statrs::distribution::{Normal, StudentsT, Continuous};
+use statrs::distribution::{Continuous, Normal, StudentsT};
 use statrs::function::gamma::ln_gamma;
+use statrs::statistics::Statistics;
 use nlopt::{Algorithm, Nlopt, Target};
 
 /// Return string `"Hello world!"` to R.
@@ -265,6 +266,90 @@ impl GARCH {
     }
 }
 
+#[extendr]
+struct MCGARCH {
+    distribution: Distribution,
+}
+
+/// MCGARCH model.
+/// @export
+#[extendr]
+impl MCGARCH {
+    fn new(distribution: &str) -> Self {
+        Self {
+            distribution: match distribution {
+                "Normal" => Distribution::Normal,
+                "StudentsT" => Distribution::StudentsT,
+                _ => panic!("Unknown distribution: {}", distribution),
+            },
+        }
+    }
+
+    fn fit(&self, intraday_returns: &[f64], n_bins: usize) -> Vec<f64> {
+        let n_days: usize = intraday_returns.len() / n_bins;
+        let mut daily_returns: Vec<f64> = vec![0.0_f64; n_days];
+        for (i, c) in intraday_returns.chunks_exact(n_bins).enumerate() {
+            daily_returns[i] = c.iter().sum();
+        }
+        let (daily_garch, daily_init_params): (GARCH, Vec<f64>) =
+            match &self.distribution {
+                Distribution::Normal => {
+                    (
+                        GARCH::new("Normal"),
+                        vec![
+                            daily_returns.clone().variance() / 1000_f64,
+                            0.05_f64,
+                            0.9_f64
+                        ]
+                    )
+                },
+                Distribution::StudentsT => {
+                    (
+                        GARCH::new("StudentsT"),
+                        vec![
+                            daily_returns.clone().variance() / 1000_f64,
+                            0.05_f64,
+                            0.9_f64,
+                            4.0_f64
+                        ]
+                    )
+                },
+            };
+        let daily_sigmas = daily_garch.sigmas(
+            &daily_garch.fit(&daily_init_params, &daily_returns),
+            &daily_returns,
+        );
+
+        let mut diurnal_sigmas2 = vec![0.0_f64; n_bins];
+        for (i, c) in intraday_returns.chunks_exact(n_bins).enumerate() {
+            for j in 1..n_bins {
+                diurnal_sigmas2[j] += c[j].powi(2) / daily_sigmas[i];
+            }
+        }
+        for i in 1..n_bins {
+            diurnal_sigmas2[i] /= n_days as f64;
+        }
+
+        let mut normalized_intraday_returns: Vec<f64> = vec![0.0_f64; n_days * n_bins];
+        for (i, (c1, c2)) in normalized_intraday_returns.chunks_exact_mut(n_bins)
+            .zip(intraday_returns.chunks_exact(n_bins))
+            .enumerate() {
+            for j in 1..n_bins {
+                c1[j] = c2[j] / (daily_sigmas[i] * diurnal_sigmas2[j].sqrt());
+            }
+        }
+        let intraday_garch: GARCH = GARCH::new("Normal");
+        intraday_garch.fit(
+            &vec![
+                normalized_intraday_returns.clone().variance() / 1000_f64,
+                0.05,
+                0.9
+            ],
+            &normalized_intraday_returns
+        )
+    }
+}
+
 
 
 
@@ -276,4 +361,5 @@ extendr_module! {
     fn hello_world;
 
     impl GARCH;
+    impl MCGARCH;
 }

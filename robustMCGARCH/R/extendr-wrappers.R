@@ -60,4 +60,20 @@ GARCH$fit <- function(params, returns) .Call(wrap__GARCH__fit, self, params, ret
 #' @export
 `[[.GARCH` <- `$.GARCH`
 
+#' MCGARCH model.
+#' @export
+MCGARCH <- new.env(parent = emptyenv())
+
+MCGARCH$new <- function(distribution) .Call(wrap__MCGARCH__new, distribution)
+
+MCGARCH$fit <- function(intraday_returns, n_bins) .Call(wrap__MCGARCH__fit, self, intraday_returns, n_bins)
+
+#' @rdname MCGARCH
+#' @usage NULL
+#' @export
+`$.MCGARCH` <- function (self, name) { func <- MCGARCH[[name]]; environment(func) <- environment(); func }
+
+#' @export
+`[[.MCGARCH` <- `$.MCGARCH`
+
 # nolint end
