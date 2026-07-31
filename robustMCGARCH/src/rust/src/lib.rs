@@ -6,13 +6,6 @@ use statrs::function::gamma::ln_gamma;
 use statrs::statistics::Statistics;
 use nlopt::{Algorithm, Nlopt, Target};
 
-/// Return string `"Hello world!"` to R.
-/// @export
-#[extendr]
-fn hello_world() -> &'static str {
-    "Hello world!"
-}
-
 
 
 
@@ -20,6 +13,9 @@ enum Distribution {
     Normal,
     StudentsT,
 }
+
+
+
 
 #[extendr]
 struct GARCH {
@@ -266,6 +262,9 @@ impl GARCH {
     }
 }
 
+
+
+
 #[extendr]
 struct MCGARCH {
     distribution: Distribution,
@@ -358,8 +357,6 @@ impl MCGARCH {
 // See corresponding C code in `entrypoint.c`.
 extendr_module! {
     mod robustMCGARCH;
-    fn hello_world;
-
     impl GARCH;
     impl MCGARCH;
 }
