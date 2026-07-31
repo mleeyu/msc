@@ -267,36 +267,36 @@ impl GARCH {
 
 #[extendr]
 struct MCGARCH {
-    distribution: Distribution,
+    white_noise: Distribution,
 }
 
 /// MCGARCH model.
 /// @export
 #[extendr]
 impl MCGARCH {
-    fn new(distribution: &str) -> Self {
+    fn new(white_noise: &str) -> Self {
         Self {
-            distribution: match distribution {
+            white_noise: match white_noise {
                 "Normal" => Distribution::Normal,
                 "StudentsT" => Distribution::StudentsT,
-                _ => panic!("Unknown distribution: {}", distribution),
+                _ => panic!("Unknown distribution: {}", white_noise),
             },
         }
     }
 
-    fn fit(&self, intraday_returns: &[f64], n_bins: usize) -> Vec<f64> {
-        let n_days: usize = intraday_returns.len() / n_bins;
-        let mut daily_returns: Vec<f64> = vec![0.0_f64; n_days];
-        for (i, c) in intraday_returns.chunks_exact(n_bins).enumerate() {
-            daily_returns[i] = c.iter().sum();
+    fn fit(&self, returns_ti: &[f64], n_bins: usize) -> List {
+        let n_days: usize = returns_ti.len() / n_bins;
+        let mut returns_t: Vec<f64> = vec![0.0_f64; n_days];
+        for (t, c) in returns_ti.chunks_exact(n_bins).enumerate() {
+            returns_t[t] = c.iter().sum();
         }
-        let (daily_garch, daily_init_params): (GARCH, Vec<f64>) =
-            match &self.distribution {
+        let (garch_t, initial_params_t): (GARCH, Vec<f64>) =
+            match &self.white_noise {
                 Distribution::Normal => {
                     (
                         GARCH::new("Normal"),
                         vec![
-                            daily_returns.clone().variance() / 1000_f64,
+                            returns_t.clone().variance() / 1000_f64,
                             0.05_f64,
                             0.9_f64
                         ]
@@ -306,7 +306,7 @@ impl MCGARCH {
                     (
                         GARCH::new("StudentsT"),
                         vec![
-                            daily_returns.clone().variance() / 1000_f64,
+                            returns_t.clone().variance() / 1000_f64,
                             0.05_f64,
                             0.9_f64,
                             4.0_f64
@@ -314,37 +314,52 @@ impl MCGARCH {
                     )
                 },
             };
-        let daily_sigmas = daily_garch.sigmas(
-            &daily_garch.fit(&daily_init_params, &daily_returns),
-            &daily_returns,
+        let params_t: Vec<f64> = garch_t.fit(&initial_params_t, &returns_t);
+        let sigmas_t = garch_t.sigmas(
+            &params_t,
+            &returns_t,
         );
 
-        let mut diurnal_sigmas2 = vec![0.0_f64; n_bins];
-        for (i, c) in intraday_returns.chunks_exact(n_bins).enumerate() {
-            for j in 1..n_bins {
-                diurnal_sigmas2[j] += c[j].powi(2) / daily_sigmas[i];
+        let mut sigmas_i = vec![0.0_f64; n_bins];
+        for (t, c) in returns_ti.chunks_exact(n_bins).enumerate() {
+            for i in 0..n_bins {
+                sigmas_i[i] += (c[i] / sigmas_t[t]).powi(2);
             }
         }
-        for i in 1..n_bins {
-            diurnal_sigmas2[i] /= n_days as f64;
+        for i in 0..n_bins {
+            sigmas_i[i] = (sigmas_i[i] / n_days as f64).sqrt();
         }
 
-        let mut normalized_intraday_returns: Vec<f64> = vec![0.0_f64; n_days * n_bins];
-        for (i, (c1, c2)) in normalized_intraday_returns.chunks_exact_mut(n_bins)
-            .zip(intraday_returns.chunks_exact(n_bins))
-            .enumerate() {
-            for j in 1..n_bins {
-                c1[j] = c2[j] / (daily_sigmas[i] * diurnal_sigmas2[j].sqrt());
+        let mut returns_ti_normalized: Vec<f64> = vec![0.0_f64; n_days * n_bins];
+        for (t, (c1, c2)) in returns_ti_normalized
+            .chunks_exact_mut(n_bins)
+            .zip(returns_ti.chunks_exact(n_bins))
+            .enumerate()
+        {
+            for i in 0..n_bins {
+                c1[i] = c2[i] / (sigmas_t[t] * sigmas_i[i]);
             }
         }
-        let intraday_garch: GARCH = GARCH::new("Normal");
-        intraday_garch.fit(
+        let garch_ti: GARCH = GARCH::new("Normal");
+        let params_ti: Vec<f64> = garch_ti.fit(
             &vec![
-                normalized_intraday_returns.clone().variance() / 1000_f64,
+                returns_ti_normalized.clone().population_variance() / 1000_f64,
                 0.05,
                 0.9
             ],
-            &normalized_intraday_returns
+            &returns_ti_normalized
+        );
+        let sigmas_ti: Vec<f64> = garch_ti.sigmas(
+            &params_ti,
+            &returns_ti_normalized,
+        );
+
+        list!(
+            sigmas_t = sigmas_t,
+            params_t = params_t,
+            sigmas_i = sigmas_i,
+            sigmas_ti = sigmas_ti,
+            params_ti = params_ti
         )
     }
 }
