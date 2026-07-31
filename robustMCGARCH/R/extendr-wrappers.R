@@ -5,15 +5,11 @@
 #' @useDynLib robustMCGARCH, .registration = TRUE
 NULL
 
-#' Return string `"Hello world!"` to R.
-#' @export
-hello_world <- function() .Call(wrap__hello_world)
-
 #' GARCH(p = 1, q = 1) model.
 #' @export
 #' @section Methods:
 #'\subsection{Method `new`}{
-#'Create GARCH(1,1) model with specified error distribution.
+#'Create GARCH(1,1) model with specified white noise distribution.
 #'}
 #'
 #'\subsection{Method `simulate`}{
@@ -38,7 +34,7 @@ hello_world <- function() .Call(wrap__hello_world)
 #'
 GARCH <- new.env(parent = emptyenv())
 
-GARCH$new <- function(distribution) .Call(wrap__GARCH__new, distribution)
+GARCH$new <- function(white_noise) .Call(wrap__GARCH__new, white_noise)
 
 GARCH$simulate <- function(params, n) .Call(wrap__GARCH__simulate, self, params, n)
 

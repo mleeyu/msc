@@ -19,20 +19,20 @@ enum Distribution {
 
 #[extendr]
 struct GARCH {
-    distribution: Distribution,
+    white_noise: Distribution,
 }
 
 /// GARCH(p = 1, q = 1) model.
 /// @export
 #[extendr]
 impl GARCH {
-    /// Create GARCH(1,1) model with specified error distribution.
-    fn new(distribution: &str) -> Self {
+    /// Create GARCH(1,1) model with specified white noise distribution.
+    fn new(white_noise: &str) -> Self {
         Self {
-            distribution: match distribution {
+            white_noise: match white_noise {
                 "Normal" => Distribution::Normal,
                 "StudentsT" => Distribution::StudentsT,
-                _ => panic!("Unknown distribution: {}", distribution),
+                _ => panic!("Unknown distribution: {}", white_noise),
             },
         }
     }
@@ -43,7 +43,7 @@ impl GARCH {
             (params[0], params[1], params[2]);
         let mut returns: Vec<f64> = vec![0.0_f64; n];
         let mut sigmas: Vec<f64> = vec![0.0_f64; n];
-        let errors: Vec<f64> = match &self.distribution {
+        let errors: Vec<f64> = match &self.white_noise {
             Distribution::Normal => {
                 call!("rnorm", n, 0.0_f64, 1.0_f64)
                     .unwrap()
@@ -116,7 +116,7 @@ impl GARCH {
             (params[0], params[1], params[2]);
         let mut sigma: f64 = (omega / (1.0_f64 - alpha - beta)).sqrt();
 
-        match &self.distribution {
+        match &self.white_noise {
             Distribution::Normal => {
                 let normal = Normal::new(0.0_f64, 1.0_f64).unwrap();
                 let mut log_likelihood: f64 =
@@ -161,7 +161,7 @@ impl GARCH {
         }
         let mut sigma2: f64 = omega / (1.0_f64 - alpha - beta);
 
-        match &self.distribution {
+        match &self.white_noise {
             Distribution::Normal => {
                 let mut objective: f64 =
                     - returns[0] * returns[0] / sigma2 - sigma2.ln();
@@ -223,7 +223,7 @@ impl GARCH {
             returns,
         );
 
-        let (lower_bounds, upper_bounds) = match &self.distribution {
+        let (lower_bounds, upper_bounds) = match &self.white_noise {
             Distribution::Normal => (
                 vec![f64::EPSILON.sqrt(),
                      0.0_f64,

@@ -17,7 +17,7 @@ GARCH(p = 1, q = 1) model.
 \section{Methods}{
 
 \subsection{Method \code{new}}{
-Create GARCH(1,1) model with specified error distribution.
+Create GARCH(1,1) model with specified white noise distribution.
 }
 
 \subsection{Method \code{simulate}}{
