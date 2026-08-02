@@ -355,11 +355,11 @@ impl MCGARCH {
         );
 
         list!(
-            sigmas_t = sigmas_t,
             params_t = params_t,
+            sigmas_t = sigmas_t,
             sigmas_i = sigmas_i,
-            sigmas_ti = sigmas_ti,
-            params_ti = params_ti
+            params_ti = params_ti,
+            sigmas_ti = sigmas_ti
         )
     }
 }
