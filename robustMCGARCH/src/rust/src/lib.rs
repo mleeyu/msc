@@ -5,6 +5,7 @@ use statrs::distribution::{Continuous, Normal, StudentsT};
 use statrs::function::gamma::ln_gamma;
 use statrs::statistics::Statistics;
 use nlopt::{Algorithm, Nlopt, Target};
+use rayon::prelude::*;
 
 
 
@@ -201,6 +202,72 @@ impl GARCH {
         }
     }
 
+    fn objective_p(&self, params: &[f64], returns: &[f64]) -> f64 {
+        let (omega, alpha, beta): (f64, f64, f64) = (params[0], params[1], params[2]);
+        if alpha + beta >= 1.0_f64 { return f64::NEG_INFINITY; }
+
+        match &self.white_noise {
+            Distribution::Normal => {
+                let sigma2_unconditional: f64 = omega / (1.0_f64 - alpha - beta);
+                let chunk_size: usize = returns.len().div_ceil(rayon::current_num_threads());
+                let objective: f64 =
+                    - returns[0] * returns[0] / sigma2_unconditional - sigma2_unconditional.ln()
+                    + &returns[1..]
+                    .par_chunks(chunk_size)
+                    .enumerate()
+                    .map(|(chunk_idx, chunk)| {
+                        // Non recursive
+                        let mut sigma2: f64 = 0.0_f64;
+                        let i_chunk: usize = 1_usize + chunk_idx * chunk_size;
+                        let mut beta_power: f64 = 1.0_f64;
+                        for &r in returns[0..i_chunk].iter().rev() {
+                            if beta_power < 1e-300 { break; }
+                            sigma2 += beta_power * (omega + alpha * r * r);
+                            beta_power *= beta;
+                        }
+                        sigma2 += beta_power * sigma2_unconditional;
+
+                        // Recursive
+                        let mut objective_chunk: f64 = - chunk[0] * chunk[0] / sigma2 - sigma2.ln();
+                        for i in 1..chunk.len() {
+                            let prev: f64 = chunk[i - 1];
+                            let curr: f64 = chunk[i];
+                            sigma2 = omega + alpha * prev * prev + beta * sigma2;
+                            objective_chunk += - curr * curr / sigma2 - sigma2.ln();
+                        }
+                        objective_chunk
+                    })
+                    .sum::<f64>();
+                objective
+            }
+            Distribution::StudentsT => {
+                let mut sigma2 = omega / (1.0_f64 - alpha - beta);
+                let nu: f64 = params[3];
+                let nu_plus_1: f64 = nu + 1.0_f64;
+                let inv_sd2: f64 = 1.0_f64 / (nu / (nu - 2.0_f64));
+                let mut objective: f64 =
+                    2.0_f64 * (ln_gamma(nu_plus_1 / 2.0_f64)
+                               - ln_gamma(nu / 2.0_f64)) - nu.ln()
+                    - nu_plus_1 * (1.0_f64 + returns[0] * returns[0]
+                                             / (sigma2 * nu)).ln()
+                    - sigma2.ln();
+                for w in returns.windows(2) {
+                    sigma2 = omega
+                             + alpha * w[0] * w[0]
+                             + beta * sigma2;
+                    sigma2 *= inv_sd2;
+                    objective +=
+                        2.0_f64 * (ln_gamma(nu_plus_1 / 2.0_f64)
+                                   - ln_gamma(nu / 2.0_f64)) - nu.ln()
+                        - nu_plus_1 * (1.0_f64 + w[1] * w[1]
+                                                 / (sigma2 * nu)).ln()
+                        - sigma2.ln();
+                }
+                objective
+            }
+        }
+    }
+
     // Fit returns with GARCH(p = 1, q = 1) model.
     fn fit(&self, params: &[f64], returns: &[f64]) -> Vec<f64> {
         let n = params.len();
@@ -212,12 +279,12 @@ impl GARCH {
                 if let Some(grad) = grad {
                     nlopt::approximate_gradient(
                         x,
-                        |x: &[f64]| self.objective(x, data),
+                        |x: &[f64]| self.objective_p(x, data),
                         grad,
                     );
                 }
 
-                self.objective(x, data)
+                self.objective_p(x, data)
             },
             Target::Maximize,
             returns,

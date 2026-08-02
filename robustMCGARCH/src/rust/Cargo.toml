@@ -17,6 +17,7 @@ path = 'document.rs'
 extendr-api = "0.9.0"
 statrs = "0.18.0"
 nlopt = "0.8.1"
+rayon = "1.10.0"
 
 [profile.release]
 opt-level = 3
