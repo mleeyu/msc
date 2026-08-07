@@ -46,8 +46,6 @@ GARCH$log_likelihood <- function(params, returns) .Call(wrap__GARCH__log_likelih
 
 GARCH$objective <- function(params, returns) .Call(wrap__GARCH__objective, self, params, returns)
 
-GARCH$objective_p <- function(params, returns) .Call(wrap__GARCH__objective_p, self, params, returns)
-
 GARCH$fit <- function(params, returns) .Call(wrap__GARCH__fit, self, params, returns)
 
 #' @rdname GARCH
