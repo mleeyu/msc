@@ -84,13 +84,13 @@ O bolsista, durante o período abrangido por este relatório, cursou as discipli
 \end{itemize}
 \end{sloppypar}
 
-A principal referência utilizada durante o período foi o artigo \citetitle{Engle_Sokalska_2012} de \citet{Engle_Sokalska_2012}. Seja $t = 1, \dots, T$ o índice dos dias e $i = 1, \dots, N$ o índice do período de uma dia, então denotamos $r_{t,i}$ o log-retorno do $t$-ésimo dia e $i$-ésimo intervalo. O modelo proposto por \citet{Engle_Sokalska_2012} decompõe os retornos em três componentes multiplicativos,
+A principal referência utilizada durante o período foi o artigo \citetitle{Engle_Sokalska_2012} de \citet{Engle_Sokalska_2012}. Seja $t = 1, \dots, T$ o índice dos dias e $i = 1, \dots, N$ o índice do intervalo de uma dia, então denotamos $r_{t,i}$ o log-retorno do $t$-ésimo dia e $i$-ésimo intervalo. O modelo MCGARCH (\textit{Multiplicative Component GARCH}) proposto por \citet{Engle_Sokalska_2012}, decompõe os retornos em três componentes multiplicativos,
 \begin{align*}
     r_{t,i} = \sqrt{h_{t} s_{i} q_{t,i}} \varepsilon_{t,i}, \quad \text{onde $\varepsilon_{t,i} \sim \mathcal{N}(0,1)$}
 \end{align*}
 e $h_{t}$ é a componente diária da variância, $s_{i}$ é a componente diurna da variância, $q_{t,i}$ é a componente intradiária da variância e $\varepsilon_{t,i}$ é o termo do erro.
 
-As estimativas dos componentes são calculadas sequencialmente. Na primeira etapa a componente diária, denotada por $\hat{h}_{t}$, é ajustada utilizando o modelo GARCH de \citet{Bollerslev_1986}, posteriormente a componente diurna é estimada pela seguinte média
+As estimativas dos componentes são calculadas sequencialmente. Na primeira etapa a componente diária, denotada por $\hat{h}_{t}$, é ajustada utilizando o modelo GARCH (\textit{Generalized Autoregressive Conditional Heteroskedasticity}) de \citet{Bollerslev_1986}, posteriormente a componente diurna é estimada pela seguinte média
 \begin{align*}
     \hat{s}_{i} = \frac{1}{T} \sum_{t = 1}^{T} \frac{r_{t,i}^{2}}{\hat{h}_{t}},
 \end{align*}
@@ -99,10 +99,11 @@ e por último, a componente intradiária é estimada por outro modelo GARCH na s
     \frac{r_{t,i}}{\sqrt{h_{t} s_{i}}} = \sqrt{q_{t,i}} \varepsilon_{t,i}, \quad \text{onde $\varepsilon_{t,i} \sim \mathcal{N}(0,1)$}.
 \end{align*}
 
-No artigo original de \citet{Engle_Sokalska_2012} a componente diária é obtida através de previsões de volatilidade comercialmente livres, e estimadas pelo modelo de risco multifatorial. Os autores ressaltam que que outras formas de obter as estimativas também são válidas, sendo uma delas o modelo GARCH. Contudo, devido a alta rotatividade das propriedades corporativas, é difícil obter longas séries de dados consistentes. Além disso, outra observação é a respeito da ordem dos modelos GARCH, que por serem parcimoniosos, geralmente especificações do tipo GARCH(1, 1) são suficientes.
+No artigo original de \citet{Engle_Sokalska_2012} a componente diária é obtida através de previsões de volatilidade comercialmente livres, e estimadas pelo modelo de risco multifatorial. Os autores ressaltam que que outras formas de obter as estimativas também são válidas, sendo uma delas o modelo GARCH. Contudo, devido a alta rotatividade das propriedades corporativas, é difícil obter longas séries de dados consistentes.
 
-% Implementação em Rust, https://cran.r-project.org/web/packages/using_rust.html
-% Aplicação (reproduzir o artigo) em Bitcoin
+Ademais, outra observação é a respeito da ordem dos modelos GARCH, que por serem parcimoniosos, geralmente especificações do tipo GARCH(1, 1) são suficientes. Em \citet{Engle_Sokalska_2012} os termos $\varepsilon_{t,i}$ são assumidos como normalmente distribuídos, contudo nada nos impede de substituir por outras distribuições, como é o caso do artigo de \citet{Ke_etal_2026}, onde a distribuição \textit{Student's T} assimétrica, com média zero e variância unitária, é utilizada.
+
+As rotinas computacionais do modelo MCGARCH foram implementadas em Rust, que juntamente com a biblioteca rextendr, disponibiliza as funções para o R. A linguagem de programação Rust é uma linguagem moderna que impõe segurança de memória através do seu sistema de gerenciamento de memória, sem comprometer no desempenho quando comparadas a outras linguagens como C e C++. Desde Novembro de 2022, CRAN (\textit{Comprehensive R Archive Network}) oferece compiladores para Rust em seus servidores, sendo possível distribuir a biblioteca posteriormente.
 
 
 
