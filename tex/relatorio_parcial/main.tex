@@ -103,7 +103,31 @@ No artigo original de \citet{Engle_Sokalska_2012} a componente diária é obtida
 
 Ademais, outra observação é a respeito da ordem dos modelos GARCH, que por serem parcimoniosos, geralmente especificações do tipo GARCH(1, 1) são suficientes. Em \citet{Engle_Sokalska_2012} os termos $\varepsilon_{t,i}$ são assumidos como normalmente distribuídos, contudo nada nos impede de substituir por outras distribuições, como é o caso do artigo de \citet{Ke_etal_2026}, onde a distribuição \textit{Student's T} assimétrica, com média zero e variância unitária, é utilizada.
 
-As rotinas computacionais do modelo MCGARCH foram implementadas em Rust, que juntamente com a biblioteca rextendr, disponibiliza as funções para o R. A linguagem de programação Rust é uma linguagem moderna que impõe segurança de memória através do seu sistema de gerenciamento de memória, sem comprometer no desempenho quando comparadas a outras linguagens como C e C++. Desde Novembro de 2022, CRAN (\textit{Comprehensive R Archive Network}) oferece compiladores para Rust em seus servidores, sendo possível distribuir a biblioteca posteriormente.
+As rotinas computacionais do modelo MCGARCH (e GARCH) foram implementadas em Rust, que juntamente com a biblioteca rextendr, disponibiliza as funções para o R. A linguagem de programação Rust é uma linguagem moderna que impõe segurança de memória através do seu sistema de gerenciamento de memória, sem comprometer no desempenho quando comparadas a outras linguagens como C e C++. Desde Novembro de 2022, CRAN (\textit{Comprehensive R Archive Network}) oferece compiladores para Rust em seus servidores, sendo possível distribuir a biblioteca posteriormente.
+
+Devido ao elevado número de observações em dados intradiário de alta frequência, e ao fato do modelo MCGARCH ser construído a partir do modelo GARCH, a eficiência dos algoritmos de estimação do modelo GARCH são importantes. O modelo GARCH é definido pelas seguintes equações,
+\begin{align*}
+    \begin{cases}
+        \sigma_{t}^{2} = \omega + \alpha r_{t-1}^{2} + \beta \sigma_{t-1}^{2} \\
+        r_{t}^{2} = \sigma_{t}^{2} \varepsilon_{t} \quad \text{onde $\varepsilon_{t} \sim RB(0, 1)$}
+    \end{cases},
+\end{align*}
+e $\omega > 0$, $\alpha, \beta \geq 0$ e $\alpha + \beta < 1$.
+
+Seja $r_{1}, \dots, r_{T}$ uma série de retornos e $\theta$ o conjunto dos parâmetros do modelo GARCH, as estimativas $\hat{\theta}$ podem ser encontradas maximizando a função de log-verossimilhança,
+\begin{align*}
+    l(\theta | r_{1}, \dots, r_{n})
+    \approx \sum_{t=2}^{T} \log(f(r_{t} | \theta, \mathcal{F}_{t-1})),
+\end{align*}
+onde $\mathcal{F}_{t-1}$ é a informação disponível até o instante $t-1$. Observe que é impossível calcular a função densidade de probabilidade no instante $t=1$, então ignoramos o primeiro termo e trabalhamos com a aproximação.
+
+Algoritmos iterativos de otimização não linear, como LBFGS, são utilizados para resolver o problema de maximização da log-verossimilhança, então a função objetiva deve ser executada eficientemente. A retirada ou adição de constantes na função objetiva podem ajudar na redução do número de operações realizadas, mas o gargalo ainda está presente na obtenção das estimativas $\hat{\sigma}_{1}^{2}, \dots, \hat{\sigma}_{T}^{2}$.
+
+A forma mais natural de calcular essas estimativas é chutar $\hat{\sigma}_{1}^{2}$, usualmente a variância incondicional, e calcular as demais estimativas $\hat{\sigma}_{2}^{2}, \dots, \hat{\sigma}_{T}^{2}$ iterativamente, contudo este método impossibilita paralelização. Para viabilizar a paralelização, dividimos $\hat{\sigma}_{1}^{2}, \dots, \hat{\sigma}_{T}^{2}$ em sequências para cada \textit{thread} disponível na CPU, onde a primeira estimativa de cada sequência é calculada pela seguinte forma,
+\begin{align*}
+    \hat{\sigma}_{t}^{2} &= \sum_{j=0}^{t-2} \hat{\beta}^{j} (\hat{\omega} + \hat{\alpha} r_{t-j-1}^{2}) + \hat{\beta}^{t-1} \hat{\sigma}_{1}^{2},
+\end{align*}
+e as demais seguem pela forma iterativa. Note que quando $t$ aumenta, os termos $\hat{\beta}^{j}$ convergem para zero, podendo ser ignorados.
 
 
 
