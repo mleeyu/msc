@@ -16,6 +16,9 @@
 \usepackage{amsfonts}
 \usepackage{bm}
 
+\usepackage[ruled]{algorithm2e}
+\SetAlgorithmName{Algoritmo}{Algoritmos}{Lista de Algoritmos}
+
 % table
 % plots
 
@@ -69,7 +72,7 @@ A crescente disponibilidade de dados de alta frequência nos mercados financeiro
 
 
 \section{Realizações no Período}
-O bolsista, durante o período abrangido por este relatório, cursou as disciplinas necessárias do mestrado e iniciou os estudos relacionados ao tema da pesquisa, através da leitura de artigos da literatura, com a finalidade de se familiarizar com o escopo do projeto e servir como inspiração para desenvolvimento do modelo proposto. A lista dos artigos estão listadas abaixo.
+O bolsista, durante o período abrangido por este relatório, cursou as disciplinas necessárias do mestrado e iniciou os estudos relacionados ao tema da pesquisa, realizando uma revisão bibliográfica por meio da leitura de artigos científicos, com a finalidade de se familiarizar com o escopo do projeto e servir como inspiração para desenvolvimento do modelo proposto. A lista dos artigos estão listados abaixo.
 \begin{sloppypar}
 \begin{itemize}
     \item \citetitle{Engle_Sokalska_2012} de \citet{Engle_Sokalska_2012};
@@ -129,15 +132,38 @@ A forma mais natural de calcular essas estimativas é chutar $\hat{\sigma}_{1}^{
 \end{align*}
 e as demais seguem pela forma iterativa. Note que quando $t$ aumenta, os termos $\hat{\beta}^{j}$ convergem para zero, podendo ser ignorados.
 
+O algoritmo para simular os retornos intradiários pelo modelo MCGARCH não é trivial, pois as componentes diárias e intradiárias devem ser geradas conjuntamente. O pseudo-código, presente no Algoritmo \ref{alg:mcgarch_sim}, será útil para verificar se a implementação da função de ajuste do modelo está correta e também para simulações de Monte Carlo futuras. No Algoritmo \ref{alg:mcgarch_sim} a componente diária e intradiária são geradas por modelos GARCH(1, 1) com respectivos parâmetros $\omega_{h}, \alpha_{h}, \beta_{h}$ e $\omega_{q}, \alpha_{q}, \beta_{q}$.
+
+\begin{algorithm}
+\caption{Simulador de retornos intradiários pelo modelo MCGARCH.}\label{alg:mcgarch_sim}
+$h\_prev \gets \frac{\omega_{h}}{1 - \alpha_{h} - \beta_{h}}$\;
+$q\_prev \gets \frac{\omega_{q}}{1 - \alpha_{q} - \beta_{q}}$\;
+
+\For{$t=1,\dots,n\_days$}{
+    $h_{t} \gets h\_prev$\;
+    \For{$i=1,\dots,n\_bins$}{
+        $q_{t,i} \gets q\_prev$\;
+        $r_{t,i} \gets \sqrt{h_{t}, s_{i}, q_{t,i}} \varepsilon_{t,i}$\;
+        $q\_prev \gets \omega_{q} + \alpha_{q} \left(\frac{r_{t,i}}{\sqrt{h_{t} s_{i}}}\right)^{2} + \beta_{q} q_{t,i}$\;
+    }
+    $h\_prev \gets \omega_{h} + \alpha_{h} \left(\sum_{i=1}^{n\_bins} r_{t,i}\right)^{2} + \beta_{h} h_{t}$\;
+}
+\end{algorithm}
+
+Durante o período deste relatório, também continuamos com a elaboração do artigo ``Outliers and the Backtesting of Risk Measure Forecasts: Calibration Tests'', estendendo as simulações de Monte Carlo e realizando algumas alterações na aplicação empírica. O artigo é fruto da iniciação científica, financiada pela FAPESP, pelo processo n.º 2024/06269-6, que será útil neste projeto.
+
 
 
 
 \section{Plano de Gestão de Dados}
-
+Os resultados obtidos, incluindo as rotinas computacionais, serão disponibilizadas de forma pública em um repositório no GitHub.
 
 
 
 \section{Plano de Atividades para o Próximo Período}
+No próximo período, daremos continuidade ao projeto propondo diversos modelos baseados no MCGARCH, com o objetivo de contornar os problemas gerados por outliers no período de estimação. A hipótese é que a componente diurna da volatilidade é constante e não consegue capturar de forma correta valores extremos, portanto propomos ajustar através do modelo GAS (\textit{Generalized Autoregressive Score}) de \citet{Creal_Koopman_Lucas_2008}.
+
+Além disso, durante o próximo período o aluno irá apresentar os resultados do artigo ``Outliers and the Backtesting of Risk Measure Forecasts: Calibration Tests'', no formato pôster, na 26ª edição do SINAPE (Simpósio Nacional de Probabilidade e Estatística), realizada no período de 13 a 18 de setembro de 2026 na cidade de Gramado (Rio Grande do Sul).
 
 
 
