@@ -132,7 +132,7 @@ A forma mais natural de calcular essas estimativas é chutar $\hat{\sigma}_{1}^{
 \end{align*}
 e as demais seguem pela forma iterativa. Note que quando $t$ aumenta, os termos $\hat{\beta}^{j}$ convergem para zero, podendo ser ignorados.
 
-O algoritmo para simular os retornos intradiários pelo modelo MCGARCH não é trivial, pois as componentes diárias e intradiárias devem ser geradas conjuntamente. O pseudo-código, presente no Algoritmo \ref{alg:mcgarch_sim}, será útil para verificar se a implementação da função de ajuste do modelo está correta e também para simulações de Monte Carlo futuras. No Algoritmo \ref{alg:mcgarch_sim} a componente diária e intradiária são geradas por modelos GARCH(1, 1) com respectivos parâmetros $\omega_{h}, \alpha_{h}, \beta_{h}$ e $\omega_{q}, \alpha_{q}, \beta_{q}$.
+O algoritmo para simular os retornos intradiários pelo modelo MCGARCH não é trivial, pois as componentes diárias e intradiárias devem ser geradas conjuntamente. O pseudo-código, presente no Algoritmo \ref{alg:mcgarch_sim}, será útil para verificar se a implementação da função de ajuste do modelo está correta e também para simulações de Monte Carlo futuras. No Algoritmo \ref{alg:mcgarch_sim}, as componentes diária e intradiária são geradas por modelos GARCH(1, 1) com respectivos parâmetros $\omega_{h}, \alpha_{h}, \beta_{h}$ e $\omega_{q}, \alpha_{q}, \beta_{q}$.
 
 \begin{algorithm}
 \caption{Simulador de retornos intradiários pelo modelo MCGARCH.}\label{alg:mcgarch_sim}
